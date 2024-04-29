@@ -102,12 +102,12 @@ $ colmap model_converter \
 ```
 
 COLMAP输出的 *images.txt* 中的四元数 *Q* 和平移向量 *T* ，是其定义的相机坐标系下的 *R* 和 *t* ，需要首先进行坐标系的变换：
-$$
+```math
     \begin{split}\begin{aligned}
       R' = R^T \\
       t' = -R^Tt
   \end{aligned}\end{split}
-$$
+```
 
 ## · 输入文件准备
 
