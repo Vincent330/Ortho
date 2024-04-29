@@ -103,17 +103,9 @@ $ colmap model_converter \
 
 COLMAP输出的 *images.txt* 中的四元数 *Q* 和平移向量 *T* ，是其定义的相机坐标系下的 *R* 和 *t* ，需要首先进行坐标系的变换：
 $$
-\begin{split}\begin{aligned}
-R’ = R^T \\
-t’ = -R^Tt
-\end{aligned}\end{split}
-$$
-
-$$
     \begin{split}\begin{aligned}
-      \eta(t) & = \eta_i \text{ if } t_i \leq t \leq t_{i+1}  && \text{分段常数} \\
-      \eta(t) & = \eta_0 \cdot e^{-\lambda t} && \text{指数衰减} \\
-      \eta(t) & = \eta_0 \cdot (\beta t + 1)^{-\alpha} && \text{多项式衰减}
+      R’ = R^T \\
+      t’ = -R^Tt
   \end{aligned}\end{split}
 $$
 
