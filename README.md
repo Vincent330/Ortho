@@ -109,6 +109,14 @@ t’ = -R^Tt
 \end{aligned}\end{split}
 $$
 
+$$
+    \begin{split}\begin{aligned}
+      \eta(t) & = \eta_i \text{ if } t_i \leq t \leq t_{i+1}  && \text{分段常数} \\
+      \eta(t) & = \eta_0 \cdot e^{-\lambda t} && \text{指数衰减} \\
+      \eta(t) & = \eta_0 \cdot (\beta t + 1)^{-\alpha} && \text{多项式衰减}
+  \end{aligned}\end{split}
+$$
+
 ## · 输入文件准备
 
 输入文件为 *images_w.txt* ，由 *get_tras.py* 从 *images.txt* 转化，每行分别为 *NAME, QW, QX, QY, QZ, TX, TY, TZ* ，如：
