@@ -124,15 +124,29 @@ DJI_20220908100431_0102 0.06606302498136993 -0.705900617465329 0.705014721134766
 修改 *main()* 中 轨迹文件路径为 *images_w.txt* 所在路径，
 
 ```
-	//轨迹文件路径
+//轨迹文件路径
     std::ifstream infile("C:/Users/Jialei He/Desktop/try/images_w.txt");
 ```
 
 修改 *main()* 中 图像路径为 *图像文件夹* 所在路径，
 
 ```
-	//图像路径
+//图像路径
     std::string filepath = "D:/OpenSfM_1/OpenSfM/data/mydata/images/" + filename + ".JPG";
+```
+
+相机内参及平面参数：
+
+```
+int height = 8192;
+int width = 5460;
+float fx = 8352.1833208403386;
+float fy = 8349.8891564001406;
+float cx = 4088.7069849999998;
+float cy = 2744.4657299999999;
+float step = 0.25;
+cv::Vec3f plane_normal(-0.00144578, -0.00226666, 0.999996);
+cv::Vec3f plane_point(0, 0, -81.6242);
 ```
 
 运行代码生成结果，保存在 *result.jpg* 。
