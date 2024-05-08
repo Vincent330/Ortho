@@ -102,12 +102,12 @@ $ colmap model_converter \
 ```
 
 COLMAP输出的 *images.txt* 中的四元数 *Q* 和平移向量 *T* ，是其定义的相机坐标系下的 *R* 和 *t* ，需要首先进行坐标系的变换：
-```math
-  \begin{split}\begin{aligned}
-	R' = R^T \\
-	t' = -R^Tt
-  \end{aligned}\end{split}
-```
+$$
+\begin{split}\begin{aligned}
+R' = R^T  \\
+t' = -R^Tt
+\end{aligned}\end{split}
+$$
 
 ## · 输入文件准备
 
@@ -118,3 +118,21 @@ DJI_20220908100430_0101 0.06894728011920546 -0.705609884682304 0.704865015827209
 DJI_20220908100431_0102 0.06606302498136993 -0.705900617465329 0.7050147211347668 -0.017153366306688633 10.092607772563841 0.901536081989625 -6.753913497492001
 ...
 ```
+
+## · 代码运行
+
+修改 *main()* 中 轨迹文件路径为 *images_w.txt* 所在路径，
+
+```
+	//轨迹文件路径
+    std::ifstream infile("C:/Users/Jialei He/Desktop/try/images_w.txt");
+```
+
+修改 *main()* 中 图像路径为 *图像文件夹* 所在路径，
+
+```
+	//图像路径
+    std::string filepath = "D:/OpenSfM_1/OpenSfM/data/mydata/images/" + filename + ".JPG";
+```
+
+运行代码生成结果，保存在 *result.jpg* 。

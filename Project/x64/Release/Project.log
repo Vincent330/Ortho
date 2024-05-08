@@ -3,29 +3,21 @@ E:\Project\main.cpp(20,30): warning C4305: “初始化”: 从“double”到�
 E:\Project\main.cpp(21,30): warning C4305: “初始化”: 从“double”到“float”截断
 E:\Project\main.cpp(22,30): warning C4305: “初始化”: 从“double”到“float”截断
 E:\Project\main.cpp(23,30): warning C4305: “初始化”: 从“double”到“float”截断
-E:\Project\main.cpp(24,58): warning C4305: “参数”: 从“double”到“_Tp”截断
+E:\Project\main.cpp(25,58): warning C4305: “参数”: 从“double”到“_Tp”截断
           with
           [
               _Tp=float
           ]
-E:\Project\main.cpp(26,37): warning C4305: “参数”: 从“double”到“_Tp”截断
+E:\Project\main.cpp(27,37): warning C4305: “参数”: 从“double”到“_Tp”截断
           with
           [
               _Tp=float
           ]
-E:\Project\main.cpp(106,20): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
-E:\Project\main.cpp(107,20): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
-E:\Project\main.cpp(158,48): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
-E:\Project\main.cpp(159,51): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
-E:\Project\main.cpp(160,55): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
-E:\Project\main.cpp(160,48): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
-E:\Project\main.cpp(168,48): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
-E:\Project\main.cpp(169,51): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
-E:\Project\main.cpp(170,55): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
-E:\Project\main.cpp(170,48): warning C4244: “参数”: 从“int”转换到“float”，可能丢失数据
+E:\Project\main.cpp(75,20): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+E:\Project\main.cpp(76,20): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
   正在生成代码
-  13 of 281 functions ( 4.6%) were compiled, the rest were copied from previous compilation.
+  12 of 262 functions ( 4.6%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    11 functions had inline decision re-evaluated but remain unchanged
+    38 functions had inline decision re-evaluated but remain unchanged
   已完成代码的生成
   Project.vcxproj -> E:\Project\x64\Release\Project.exe

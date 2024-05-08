@@ -21,6 +21,7 @@ float fx = 8352.1833208403386;
 float fy = 8349.8891564001406;
 float cx = 4088.7069849999998;
 float cy = 2744.4657299999999;
+float step = 0.25;
 cv::Vec3f plane_normal(-0.00144578, -0.00226666, 0.999996);
 //cv::Vec3f plane_point(0, 0, -91.6242);
 cv::Vec3f plane_point(0, 0, -81.6242);
@@ -54,51 +55,19 @@ cv::Matx33f quaternion_to_rotation_matrix(float q_w, float q_x, float q_y, float
     return rotation_matrix;
 }
 
-// 投影函数
-cv::Vec3f projectPixelToPlane(float u, float v, float qw, float qx, float qy, float qz, float tx, float ty, float tz) {
-    // 将像素点转换为相机坐标系下的归一化平面坐标
-    float x_c = (u - cx) / fx;
-    float y_c = (v - cy) / fy;
-    float z_c = 1.0;
-
-    // 相机坐标系下的点
-    cv::Vec3f point_camera(x_c, y_c, z_c);
-    cv::Vec3f camera(tx, ty, tz);
-    // 将相机坐标系下的点转换为世界坐标系下的点
-    cv::Matx33f rotation_matrix = quaternion_to_rotation_matrix(qw, qx, qy, qz);
-    cv::Vec3f point_world = -rotation_matrix * point_camera + camera;
-    //std::cout << point_world << std::endl;
-    //std::cout << camera << std::endl;
-    
-    // 计算射线方向向量
-    //cv::Vec3f p_camera(u, v, 1); // 像素点在相机坐标系下的位置
-    //cv::Vec3f t_camera = rotation_matrix * cv::Vec3f(tx, ty, tz); // 将世界坐标系下的平移向量转换到相机坐标系下
-    cv::Vec3f d = (camera - point_camera) / cv::norm(camera - point_camera); // 计算射线方向向量
-
-    // 计算射线和平面的交点
-    float t = (plane_normal.dot(plane_point - point_world)) / plane_normal.dot(d);
-    cv::Vec3f intersection_point = point_world + t * d;
-
-    return intersection_point;
-}
-
 // 正射图处理
 cv::Mat process_image(cv::Mat& image, cv::Mat& new_image, float q_w, float q_x, float q_y, float q_z, float t_x, float t_y, float t_z) {
     
-    // 采样间隔
-    float step = 0.25;
-
     // 构造相机旋转矩阵
     cv::Matx33f rotation_matrix = quaternion_to_rotation_matrix(q_w, q_x, q_y, q_z);
 
     // 沿 x 和 y 方向均匀采样三维点并投影到图像上
     for (float y = -100; y < 2000; y += step) {
         for (float x = -100; x < 2000; x += step) {
-            // 计算三维点在世界坐标系下的位置
             float z = (-plane_normal[0] * x - plane_normal[1] * y + plane_point[2]) / plane_normal[2];
             cv::Vec3f point_world(x, y, z);
 
-            // 将三维点找像素点
+            // 三维点找像素点
             cv::Vec3f point_camera = -rotation_matrix.t() * point_world + rotation_matrix.t() * cv::Vec3f(t_x, t_y, t_z);
             int v = static_cast<int>((fy * point_camera[1] / point_camera[2] + cy));
             int u = static_cast<int>((fx * point_camera[0] / point_camera[2] + cx));
@@ -120,7 +89,7 @@ cv::Mat process_image(cv::Mat& image, cv::Mat& new_image, float q_w, float q_x, 
 
 int main() {
 
-    //轨迹文件
+    //轨迹文件路径
     std::ifstream infile("C:/Users/Jialei He/Desktop/try/enu_tras.txt");
     //std::ifstream infile("C:/Users/Jialei He/Desktop/enu/tras-3.txt");
     if (!infile.is_open()) {
@@ -140,6 +109,7 @@ int main() {
             std::cerr << "Failed to parse line: " << line << std::endl;
             continue;
         }
+        //图像路径
         std::string filepath = "D:/OpenSfM_1/OpenSfM/data/mydata/images/" + filename + ".JPG";
         cv::Mat image = cv::imread(filepath);
         std::cout << "读取图像 " << filename << std::endl;
@@ -150,23 +120,23 @@ int main() {
 
         if (first_line) {
             result = process_image(image, result, q_w, q_x, q_y, q_z, t_x, t_y, t_z);
+            /*
             Point2d::max.x = t_x > Point2d::max.x ? t_x : Point2d::max.x;
             Point2d::max.y = t_y > Point2d::max.y ? t_y : Point2d::max.y;
             Point2d::min.x = t_x < Point2d::min.x ? t_x : Point2d::min.x;
             Point2d::min.y = t_y < Point2d::min.y ? t_y : Point2d::min.y;
-            /*
-            cv::Vec3f tl = projectPixelToPlane(0, 0, q_w, q_x, q_y, q_z, t_x, t_y, t_z);
-            cv::Vec3f tr = projectPixelToPlane(width, 0, q_w, q_x, q_y, q_z, t_x, t_y, t_z);
-            cv::Vec3f bl = projectPixelToPlane(0, height, q_w, q_x, q_y, q_z, t_x, t_y, t_z);
-            cv::Vec3f br = projectPixelToPlane(width, height, q_w, q_x, q_y, q_z, t_x, t_y, t_z);
-            std::cout << "Projected Point: " << tl << std::endl << tr << std::endl << bl << std::endl << br << std::endl;
+            double width = Point2d::max.x - Point2d::min.x;
+            double height = Point2d::max.y - Point2d::min.y;
+            int output_width = static_cast<int>(width / step + 100);
+            int output_height = static_cast<int>(height / step + 100);
+            cv::resize(result, result, cv::Size(output_width, output_height));
             */
             first_line = false;
         }
         else {
             result = process_image(image, result, q_w, q_x, q_y, q_z, t_x, t_y, t_z);
         }
-        cv::imwrite("C:/Users/Jialei He/Desktop/ortho/result.jpg", result);
+        cv::imwrite("./result.jpg", result);
     }
     return 0;
 }
