@@ -1,9 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <vector>
-#include <string>
-#include <tuple>
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 #include <pcl/point_types.h>
@@ -11,7 +8,6 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/common/common.h>
-#include <cmath>
 
 // 相机内参
 int height = 8192;
