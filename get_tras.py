@@ -1,6 +1,6 @@
 import numpy as np
 
-def colmap2camera(input_file, output_file):  # 格式转换
+def colmap2camera(input_file, output_file):  # 轨迹格式转换
     with open(input_file, 'r') as f:
         lines = f.readlines()
 
@@ -17,7 +17,7 @@ output_file = './images_c.txt'
 colmap2camera(input_file, output_file)
 
 
-def camera2world(input_file_path, output_file_path):  # 坐标系转换
+def camera2world(input_file_path, output_file_path):  # 轨迹坐标系转换
     with open(input_file_path, 'r') as input_file:
         lines = input_file.readlines()
 
@@ -45,3 +45,19 @@ def camera2world(input_file_path, output_file_path):  # 坐标系转换
 input_file_path = './images_c.txt'
 output_file_path = './images_w.txt'
 camera2world(input_file_path, output_file_path)
+
+
+def editpoints(input_file, output_file):  # 点云格式转换
+    with open(input_file, 'r') as f:
+        lines = f.readlines()
+
+    with open(output_file, 'w') as f:
+        for line in lines[3:]:
+            columns = line.strip().split()[1:4]
+            new_line = ' '.join(columns) + '\n'
+            f.write(new_line)
+
+# 调用函数并指定输入输出文件
+input_file = './points3D.txt'
+output_file = './points_w.txt'
+editpoints(input_file, output_file)
