@@ -9,7 +9,7 @@
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/common/common.h>
 
-// Ïà»úÄÚ²Î
+// ç›¸æœºå†…å‚
 int height = 8192;
 int width = 5460;
 float fx = 8352.1833208403386;
@@ -18,21 +18,7 @@ float cx = 4088.7069849999998;
 float cy = 2744.4657299999999;
 float step = 0.25;
 
-// ´æ´¢µãµÄºá×ø±êºÍ×İ×ø±ê
-class Point2d {
-public:
-    double x;
-    double y;
-
-    Point2d(double x, double y) : x(x), y(y) {}
-
-    static Point2d max;
-    static Point2d min;
-};
-Point2d Point2d::max = Point2d(-1e10, -1e10);
-Point2d Point2d::min = Point2d(1e10, 1e10);
-
-// Ğı×ª¾ØÕó(Ïà»úµ½ÊÀ½ç×ø±êÏµµÄĞı×ª¾ØÕó)
+// æ—‹è½¬çŸ©é˜µ(ç›¸æœºåˆ°ä¸–ç•Œåæ ‡ç³»çš„æ—‹è½¬çŸ©é˜µ)
 cv::Matx33f quaternion_to_rotation_matrix(float q_w, float q_x, float q_y, float q_z) {
     cv::Matx33f rotation_matrix;
     rotation_matrix(0, 0) = 1 - 2 * q_y * q_y - 2 * q_z * q_z;
@@ -48,23 +34,23 @@ cv::Matx33f quaternion_to_rotation_matrix(float q_w, float q_x, float q_y, float
 }
 
 /*
-// µãÔÆÍ³¼ÆÂË²¨
+// ç‚¹äº‘ç»Ÿè®¡æ»¤æ³¢
 void filterPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr& input_cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr& filtered_cloud) {
-    // ´´½¨Í³¼ÆÂË²¨Æ÷¶ÔÏó
+    // åˆ›å»ºç»Ÿè®¡æ»¤æ³¢å™¨å¯¹è±¡
     pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
     sor.setInputCloud(input_cloud);
-    sor.setMeanK(50); // ÉèÖÃÓÃÓÚ¼ÆËãÆ½¾ù¾àÀëµÄµãµÄÊıÁ¿
-    sor.setStddevMulThresh(1.0); // ÉèÖÃ±ê×¼Æ«²î±¶ÊıãĞÖµ
-    sor.filter(*filtered_cloud); // Ö´ĞĞÂË²¨£¬²¢´æ´¢½á¹ûµ½filtered_cloudÖĞ
+    sor.setMeanK(50); // è®¾ç½®ç”¨äºè®¡ç®—å¹³å‡è·ç¦»çš„ç‚¹çš„æ•°é‡
+    sor.setStddevMulThresh(1.0); // è®¾ç½®æ ‡å‡†åå·®å€æ•°é˜ˆå€¼
+    sor.filter(*filtered_cloud); // æ‰§è¡Œæ»¤æ³¢ï¼Œå¹¶å­˜å‚¨ç»“æœåˆ°filtered_cloudä¸­
 }
 
-// µãÔÆÆ½ÃæÄâºÏ
+// ç‚¹äº‘å¹³é¢æ‹Ÿåˆ
 std::tuple<cv::Vec3f, cv::Vec3f, pcl::PointXYZ, pcl::PointXYZ> fitPlaneFromPointCloud(const std::string& filename) {
-    // ¼ÓÔØµãÔÆÊı¾İ
+    // åŠ è½½ç‚¹äº‘æ•°æ®
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     std::ifstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "ÎŞ·¨´ò¿ªµãÔÆÎÄ¼ş\n";
+        std::cerr << "æ— æ³•æ‰“å¼€ç‚¹äº‘æ–‡ä»¶\n";
         return std::make_tuple(cv::Vec3f(), cv::Vec3f(), pcl::PointXYZ(), pcl::PointXYZ());
     }
 
@@ -78,11 +64,11 @@ std::tuple<cv::Vec3f, cv::Vec3f, pcl::PointXYZ, pcl::PointXYZ> fitPlaneFromPoint
     }
     file.close();
 
-    // ½øĞĞµãÔÆÂË²¨
+    // è¿›è¡Œç‚¹äº‘æ»¤æ³¢
     pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     filterPointCloud(cloud, filtered_cloud);
 
-    // Æ½ÃæÄâºÏ
+    // å¹³é¢æ‹Ÿåˆ
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
 
@@ -97,14 +83,14 @@ std::tuple<cv::Vec3f, cv::Vec3f, pcl::PointXYZ, pcl::PointXYZ> fitPlaneFromPoint
     seg.segment(*inliers, *coefficients);
 
     if (inliers->indices.empty()) {
-        std::cerr << "Æ½ÃæÄâºÏÊ§°Ü¡£\n";
+        std::cerr << "å¹³é¢æ‹Ÿåˆå¤±è´¥ã€‚\n";
         return std::make_tuple(cv::Vec3f(), cv::Vec3f(), pcl::PointXYZ(), pcl::PointXYZ());
     }
 
-    cv::Vec3f normal(coefficients->values[0], coefficients->values[1], coefficients->values[2]); // Æ½Ãæ·¨ÏòÁ¿
-    cv::Vec3f point(0, 0, -coefficients->values[3] / coefficients->values[2]); // ÌáÈ¡Æ½ÃæÉÏÒ»µã
+    cv::Vec3f normal(coefficients->values[0], coefficients->values[1], coefficients->values[2]); // å¹³é¢æ³•å‘é‡
+    cv::Vec3f point(0, 0, -coefficients->values[3] / coefficients->values[2]); // æå–å¹³é¢ä¸Šä¸€ç‚¹
 
-    // ÕÒµ½µãÔÆÖĞµÄ×îĞ¡ºÍ×î´ó×ø±êÖµ
+    // æ‰¾åˆ°ç‚¹äº‘ä¸­çš„æœ€å°å’Œæœ€å¤§åæ ‡å€¼
     pcl::PointXYZ minPt, maxPt;
     pcl::getMinMax3D(*filtered_cloud, minPt, maxPt);
 
@@ -112,12 +98,12 @@ std::tuple<cv::Vec3f, cv::Vec3f, pcl::PointXYZ, pcl::PointXYZ> fitPlaneFromPoint
 }
 */
 
-// µãÔÆÆ½ÃæÄâºÏ
+// ç‚¹äº‘å¹³é¢æ‹Ÿåˆ
 std::tuple<cv::Vec3f, cv::Vec3f, pcl::PointXYZ, pcl::PointXYZ> fitPlaneFromPointCloud(const std::string& filename) {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     std::ifstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "ÎŞ·¨´ò¿ªµãÔÆÎÄ¼ş\n";
+        std::cerr << "æ— æ³•æ‰“å¼€ç‚¹äº‘æ–‡ä»¶\n";
         return std::make_tuple(cv::Vec3f(), cv::Vec3f(), pcl::PointXYZ(), pcl::PointXYZ());
     }
 
@@ -131,7 +117,7 @@ std::tuple<cv::Vec3f, cv::Vec3f, pcl::PointXYZ, pcl::PointXYZ> fitPlaneFromPoint
     }
     file.close();
 
-    // Æ½ÃæÄâºÏ
+    // å¹³é¢æ‹Ÿåˆ
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
 
@@ -146,41 +132,36 @@ std::tuple<cv::Vec3f, cv::Vec3f, pcl::PointXYZ, pcl::PointXYZ> fitPlaneFromPoint
     seg.segment(*inliers, *coefficients);
 
     if (inliers->indices.empty()) {
-        std::cerr << "Æ½ÃæÄâºÏÊ§°Ü¡£\n";
+        std::cerr << "å¹³é¢æ‹Ÿåˆå¤±è´¥ã€‚\n";
         return std::make_tuple(cv::Vec3f(), cv::Vec3f(), pcl::PointXYZ(), pcl::PointXYZ());
     }
 
-    // ÌáÈ¡Æ½Ãæ·¨ÏòÁ¿
+    // æå–å¹³é¢æ³•å‘é‡
     cv::Vec3f normal(coefficients->values[0], coefficients->values[1], coefficients->values[2]);
 
-    // ÌáÈ¡Æ½ÃæÉÏÒ»µã
+    // æå–å¹³é¢ä¸Šä¸€ç‚¹
     cv::Vec3f point(0, 0, -coefficients->values[3] / coefficients->values[2]);
 
-    // ÕÒµ½µãÔÆÖĞµÄ×îĞ¡ºÍ×î´ó×ø±êÖµ
+    // æ‰¾åˆ°ç‚¹äº‘ä¸­çš„æœ€å°å’Œæœ€å¤§åæ ‡å€¼
     pcl::PointXYZ minPt, maxPt;
     pcl::getMinMax3D(*cloud, minPt, maxPt);
 
     return std::make_tuple(normal, point, minPt, maxPt);
 }
 
-// ÕıÉäÍ¼´¦Àí
+// æ­£å°„å›¾å¤„ç†
 cv::Mat process_image(cv::Mat& image, cv::Mat& new_image, float q_w, float q_x, float q_y, float q_z, float t_x, float t_y, float t_z, const cv::Vec3f& plane_normal, const cv::Vec3f& plane_point, const pcl::PointXYZ& minPt, const pcl::PointXYZ& maxPt) {
 
-    //int maxx = ceil(maxPt.x);
-    //int minx = floor(minPt.x);
-    //int maxy = ceil(maxPt.y);
-    //int miny = floor(minPt.y);
-
-    // ¹¹ÔìÏà»úĞı×ª¾ØÕó
+    // æ„é€ ç›¸æœºæ—‹è½¬çŸ©é˜µ
     cv::Matx33f rotation_matrix = quaternion_to_rotation_matrix(q_w, q_x, q_y, q_z);
 
-    // ÑØ x ºÍ y ·½Ïò¾ùÔÈ²ÉÑùÈıÎ¬µã²¢Í¶Ó°µ½Í¼ÏñÉÏ
+    // æ²¿ x å’Œ y æ–¹å‘å‡åŒ€é‡‡æ ·ä¸‰ç»´ç‚¹å¹¶æŠ•å½±åˆ°å›¾åƒä¸Š
     for (float y = minPt.y - 5; y < maxPt.y + 15; y += step) {
         for (float x = minPt.x - 50; x < maxPt.x + 15; x += step) {
             float z = (-plane_normal[0] * x - plane_normal[1] * y + plane_point[2]) / plane_normal[2];
             cv::Vec3f point_world(x, y, z);
 
-            // ÈıÎ¬µãÕÒÏñËØµã
+            // ä¸‰ç»´ç‚¹æ‰¾åƒç´ ç‚¹
             cv::Vec3f point_camera = -rotation_matrix.t() * point_world + rotation_matrix.t() * cv::Vec3f(t_x, t_y, t_z);
             int v = static_cast<int>((fy * point_camera[1] / point_camera[2] + cy));
             int u = static_cast<int>((fx * point_camera[0] / point_camera[2] + cx));
@@ -188,7 +169,7 @@ cv::Mat process_image(cv::Mat& image, cv::Mat& new_image, float q_w, float q_x, 
             int v1 = (y - minPt.y + 5) / step;
             int u1 = (x - minPt.x + 50) / step;
 
-            // Ìî³äÏñËØÖµµ½ĞÂÍ¼Ïñ
+            // å¡«å……åƒç´ å€¼åˆ°æ–°å›¾åƒ
             if (u >= 0 && u < image.cols && v >= 0 && v < image.rows) {
                 new_image.at<cv::Vec3b>(v1, u1) = image.at<cv::Vec3b>(v, u);
             }
@@ -199,8 +180,8 @@ cv::Mat process_image(cv::Mat& image, cv::Mat& new_image, float q_w, float q_x, 
 
 int main() {
     
-    // µãÔÆÎÄ¼şÂ·¾¶
-    std::string cloudname = "./²âÊÔÊı¾İ¼°½á¹û/points_w.txt";
+    // ç‚¹äº‘æ–‡ä»¶è·¯å¾„
+    std::string cloudname = "./æµ‹è¯•æ•°æ®åŠç»“æœ/points_w.txt";
     std::tuple<cv::Vec3f, cv::Vec3f, pcl::PointXYZ, pcl::PointXYZ> plane = fitPlaneFromPointCloud(cloudname);
     cv::Vec3f plane_normal = std::get<0>(plane);
     cv::Vec3f plane_point = std::get<1>(plane);
@@ -209,8 +190,8 @@ int main() {
     int targetWidth = static_cast<int>(maxPt.x - minPt.x + 65)/step;
     int targetHeight = static_cast<int>(maxPt.y - minPt.y + 20)/step;
 
-    // ¹ì¼£ÎÄ¼şÂ·¾¶
-    std::ifstream infile("./²âÊÔÊı¾İ¼°½á¹û/images_w.txt");
+    // è½¨è¿¹æ–‡ä»¶è·¯å¾„
+    std::ifstream infile("./æµ‹è¯•æ•°æ®åŠç»“æœ/images_w.txt");
     if (!infile.is_open()) {
         std::cerr << "Failed to open data file." << std::endl;
         return -1;
@@ -228,10 +209,11 @@ int main() {
             std::cerr << "Failed to parse line: " << line << std::endl;
             continue;
         }
-        // Í¼ÏñÂ·¾¶
-        std::string imagepath = "./²âÊÔÊı¾İ¼°½á¹û/images/" + filename;
+        
+        // å›¾åƒè·¯å¾„
+        std::string imagepath = "./æµ‹è¯•æ•°æ®åŠç»“æœ/images/" + filename;
         cv::Mat image = cv::imread(imagepath);
-        std::cout << "¶ÁÈ¡Í¼Ïñ " << filename << std::endl;
+        std::cout << "è¯»å–å›¾åƒ " << filename << std::endl;
         if (image.empty()) {
             std::cerr << "Failed to read image." << std::endl;
             return -1;
@@ -244,7 +226,7 @@ int main() {
         else {
             result = process_image(image, result, q_w, q_x, q_y, q_z, t_x, t_y, t_z, plane_normal, plane_point, minPt, maxPt);
         }
-        cv::imwrite("./²âÊÔÊı¾İ¼°½á¹û/result.jpg", result);
+        cv::imwrite("./æµ‹è¯•æ•°æ®åŠç»“æœ/result.jpg", result);
     }
     return 0;
 }
