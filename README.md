@@ -102,16 +102,18 @@ $ colmap model_converter \
 ```
 
 COLMAP输出的 *images.txt* 中的四元数 *Q* 和平移向量 *T* ，是其定义的相机坐标系下的 *R* 和 *t* ，需要首先进行坐标系的变换：
-```math
-  \begin{split}\begin{aligned}
-	R' = R^T \\
-	t' = -R^Tt
-  \end{aligned}\end{split}
-```
+$$
+\begin{split}\begin{aligned}
+R' = R^T  \\
+t' = -R^Tt
+\end{aligned}\end{split}
+$$
 
 ## · 输入文件准备
 
-输入文件为 *images_w.txt* ，由 *get_tras.py* 从 *images.txt* 转化，每行分别为 *NAME, QW, QX, QY, QZ, TX, TY, TZ* ，如：
+输入文件为
+
+① *images_w.txt* ，由 *get_tras.py* 从 *images.txt* 转化，每行分别为 *NAME, QW, QX, QY, QZ, TX, TY, TZ* ，如：
 
 ```
 DJI_20220908100430_0101 0.06894728011920546 -0.705609884682304 0.704865015827209 -0.02294063350767862 -1.1987342798263498 0.879258405187668 -8.364827837490488
@@ -119,34 +121,36 @@ DJI_20220908100431_0102 0.06606302498136993 -0.705900617465329 0.705014721134766
 ...
 ```
 
+② *points_w.txt* ，由 *get_tras.py* 从 *points3D.txt* 转化，每行分别为 *X, Y, Z* ，如：
+
+```
+120.88105011 39.30334473 -91.44336700
+185.03459167 70.53565979 -98.30294800
+185.37454224 185.75335693 -90.65348053
+...
+```
+
 ## · 代码运行
+
+修改 *main()* 中 轨迹文件路径为 *points_w.txt* 所在路径，
+
+```
+	// 点云文件路径
+    std::string cloudname = "./测试数据及结果/points_w.txt";
+```
 
 修改 *main()* 中 轨迹文件路径为 *images_w.txt* 所在路径，
 
 ```
-//轨迹文件路径
-    std::ifstream infile("C:/Users/Jialei He/Desktop/try/images_w.txt");
+	// 轨迹文件路径
+    std::ifstream infile("./测试数据及结果/images_w.txt");
 ```
 
 修改 *main()* 中 图像路径为 *图像文件夹* 所在路径，
 
 ```
-//图像路径
-    std::string filepath = "D:/OpenSfM_1/OpenSfM/data/mydata/images/" + filename + ".JPG";
-```
-
-相机内参及平面参数：
-
-```
-int height = 8192;
-int width = 5460;
-float fx = 8352.1833208403386;
-float fy = 8349.8891564001406;
-float cx = 4088.7069849999998;
-float cy = 2744.4657299999999;
-float step = 0.25;
-cv::Vec3f plane_normal(-0.00144578, -0.00226666, 0.999996);
-cv::Vec3f plane_point(0, 0, -81.6242);
+	// 图像路径
+	std::string imagepath = "./测试数据及结果/images/" + filename;
 ```
 
 运行代码生成结果，保存在 *result.jpg* 。

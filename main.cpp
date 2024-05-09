@@ -3,18 +3,17 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <tuple>
 #include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <pcl/point_types.h>
+#include <pcl/ModelCoefficients.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/common/common.h>
 #include <cmath>
 
-// ç›¸æœºå†…å¤–å‚å’Œå¹³é¢æ–¹ç¨‹
-//float WIDTH = 8192;
-//float HEIGHT = 5460;
-//float fx = 8141.6649310000003;
-//float fy = 8141.6649310000003;
-//float cx = 4088.7069849999998;
-//float cy = 2744.4657299999999;
-//cv::Vec3f plane_normal(0.008542, -0.005626, 1.0);
-//cv::Vec3f plane_point(0, 0, -79.328884);
+// Ïà»úÄÚ²Î
 int height = 8192;
 int width = 5460;
 float fx = 8352.1833208403386;
@@ -22,11 +21,8 @@ float fy = 8349.8891564001406;
 float cx = 4088.7069849999998;
 float cy = 2744.4657299999999;
 float step = 0.25;
-cv::Vec3f plane_normal(-0.00144578, -0.00226666, 0.999996);
-//cv::Vec3f plane_point(0, 0, -91.6242);
-cv::Vec3f plane_point(0, 0, -81.6242);
 
-// å­˜å‚¨ç‚¹çš„æ¨ªåæ ‡å’Œçºµåæ ‡
+// ´æ´¢µãµÄºá×ø±êºÍ×İ×ø±ê
 class Point2d {
 public:
     double x;
@@ -40,7 +36,7 @@ public:
 Point2d Point2d::max = Point2d(-1e10, -1e10);
 Point2d Point2d::min = Point2d(1e10, 1e10);
 
-// æ—‹è½¬çŸ©é˜µ(ç›¸æœºåˆ°ä¸–ç•Œåæ ‡ç³»çš„æ—‹è½¬çŸ©é˜µ)
+// Ğı×ª¾ØÕó(Ïà»úµ½ÊÀ½ç×ø±êÏµµÄĞı×ª¾ØÕó)
 cv::Matx33f quaternion_to_rotation_matrix(float q_w, float q_x, float q_y, float q_z) {
     cv::Matx33f rotation_matrix;
     rotation_matrix(0, 0) = 1 - 2 * q_y * q_y - 2 * q_z * q_z;
@@ -55,31 +51,149 @@ cv::Matx33f quaternion_to_rotation_matrix(float q_w, float q_x, float q_y, float
     return rotation_matrix;
 }
 
-// æ­£å°„å›¾å¤„ç†
-cv::Mat process_image(cv::Mat& image, cv::Mat& new_image, float q_w, float q_x, float q_y, float q_z, float t_x, float t_y, float t_z) {
-    
-    // æ„é€ ç›¸æœºæ—‹è½¬çŸ©é˜µ
+/*
+// µãÔÆÍ³¼ÆÂË²¨
+void filterPointCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr& input_cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr& filtered_cloud) {
+    // ´´½¨Í³¼ÆÂË²¨Æ÷¶ÔÏó
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+    sor.setInputCloud(input_cloud);
+    sor.setMeanK(50); // ÉèÖÃÓÃÓÚ¼ÆËãÆ½¾ù¾àÀëµÄµãµÄÊıÁ¿
+    sor.setStddevMulThresh(1.0); // ÉèÖÃ±ê×¼Æ«²î±¶ÊıãĞÖµ
+    sor.filter(*filtered_cloud); // Ö´ĞĞÂË²¨£¬²¢´æ´¢½á¹ûµ½filtered_cloudÖĞ
+}
+
+// µãÔÆÆ½ÃæÄâºÏ
+std::tuple<cv::Vec3f, cv::Vec3f, pcl::PointXYZ, pcl::PointXYZ> fitPlaneFromPointCloud(const std::string& filename) {
+    // ¼ÓÔØµãÔÆÊı¾İ
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "ÎŞ·¨´ò¿ªµãÔÆÎÄ¼ş\n";
+        return std::make_tuple(cv::Vec3f(), cv::Vec3f(), pcl::PointXYZ(), pcl::PointXYZ());
+    }
+
+    float x, y, z;
+    while (file >> x >> y >> z) {
+        pcl::PointXYZ point;
+        point.x = x;
+        point.y = y;
+        point.z = z;
+        cloud->push_back(point);
+    }
+    file.close();
+
+    // ½øĞĞµãÔÆÂË²¨
+    pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    filterPointCloud(cloud, filtered_cloud);
+
+    // Æ½ÃæÄâºÏ
+    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+    pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+
+    pcl::SACSegmentation<pcl::PointXYZ> seg;
+    seg.setOptimizeCoefficients(true);
+    seg.setModelType(pcl::SACMODEL_PLANE);
+    seg.setMethodType(pcl::SAC_RANSAC);
+    seg.setMaxIterations(1000);
+    seg.setDistanceThreshold(0.01);
+    seg.setInputCloud(filtered_cloud);
+
+    seg.segment(*inliers, *coefficients);
+
+    if (inliers->indices.empty()) {
+        std::cerr << "Æ½ÃæÄâºÏÊ§°Ü¡£\n";
+        return std::make_tuple(cv::Vec3f(), cv::Vec3f(), pcl::PointXYZ(), pcl::PointXYZ());
+    }
+
+    cv::Vec3f normal(coefficients->values[0], coefficients->values[1], coefficients->values[2]); // Æ½Ãæ·¨ÏòÁ¿
+    cv::Vec3f point(0, 0, -coefficients->values[3] / coefficients->values[2]); // ÌáÈ¡Æ½ÃæÉÏÒ»µã
+
+    // ÕÒµ½µãÔÆÖĞµÄ×îĞ¡ºÍ×î´ó×ø±êÖµ
+    pcl::PointXYZ minPt, maxPt;
+    pcl::getMinMax3D(*filtered_cloud, minPt, maxPt);
+
+    return std::make_tuple(normal, point, minPt, maxPt);
+}
+*/
+
+// µãÔÆÆ½ÃæÄâºÏ
+std::tuple<cv::Vec3f, cv::Vec3f, pcl::PointXYZ, pcl::PointXYZ> fitPlaneFromPointCloud(const std::string& filename) {
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "ÎŞ·¨´ò¿ªµãÔÆÎÄ¼ş\n";
+        return std::make_tuple(cv::Vec3f(), cv::Vec3f(), pcl::PointXYZ(), pcl::PointXYZ());
+    }
+
+    float x, y, z;
+    while (file >> x >> y >> z) {
+        pcl::PointXYZ point;
+        point.x = x;
+        point.y = y;
+        point.z = z;
+        cloud->push_back(point);
+    }
+    file.close();
+
+    // Æ½ÃæÄâºÏ
+    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+    pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+
+    pcl::SACSegmentation<pcl::PointXYZ> seg;
+    seg.setOptimizeCoefficients(true);
+    seg.setModelType(pcl::SACMODEL_PLANE);
+    seg.setMethodType(pcl::SAC_RANSAC);
+    seg.setMaxIterations(1000);
+    seg.setDistanceThreshold(0.01);
+    seg.setInputCloud(cloud);
+
+    seg.segment(*inliers, *coefficients);
+
+    if (inliers->indices.empty()) {
+        std::cerr << "Æ½ÃæÄâºÏÊ§°Ü¡£\n";
+        return std::make_tuple(cv::Vec3f(), cv::Vec3f(), pcl::PointXYZ(), pcl::PointXYZ());
+    }
+
+    // ÌáÈ¡Æ½Ãæ·¨ÏòÁ¿
+    cv::Vec3f normal(coefficients->values[0], coefficients->values[1], coefficients->values[2]);
+
+    // ÌáÈ¡Æ½ÃæÉÏÒ»µã
+    cv::Vec3f point(0, 0, -coefficients->values[3] / coefficients->values[2]);
+
+    // ÕÒµ½µãÔÆÖĞµÄ×îĞ¡ºÍ×î´ó×ø±êÖµ
+    pcl::PointXYZ minPt, maxPt;
+    pcl::getMinMax3D(*cloud, minPt, maxPt);
+
+    return std::make_tuple(normal, point, minPt, maxPt);
+}
+
+// ÕıÉäÍ¼´¦Àí
+cv::Mat process_image(cv::Mat& image, cv::Mat& new_image, float q_w, float q_x, float q_y, float q_z, float t_x, float t_y, float t_z, const cv::Vec3f& plane_normal, const cv::Vec3f& plane_point, const pcl::PointXYZ& minPt, const pcl::PointXYZ& maxPt) {
+
+    //int maxx = ceil(maxPt.x);
+    //int minx = floor(minPt.x);
+    //int maxy = ceil(maxPt.y);
+    //int miny = floor(minPt.y);
+
+    // ¹¹ÔìÏà»úĞı×ª¾ØÕó
     cv::Matx33f rotation_matrix = quaternion_to_rotation_matrix(q_w, q_x, q_y, q_z);
 
-    // æ²¿ x å’Œ y æ–¹å‘å‡åŒ€é‡‡æ ·ä¸‰ç»´ç‚¹å¹¶æŠ•å½±åˆ°å›¾åƒä¸Š
-    for (float y = -100; y < 2000; y += step) {
-        for (float x = -100; x < 2000; x += step) {
+    // ÑØ x ºÍ y ·½Ïò¾ùÔÈ²ÉÑùÈıÎ¬µã²¢Í¶Ó°µ½Í¼ÏñÉÏ
+    for (float y = minPt.y - 5; y < maxPt.y + 15; y += step) {
+        for (float x = minPt.x - 50; x < maxPt.x + 15; x += step) {
             float z = (-plane_normal[0] * x - plane_normal[1] * y + plane_point[2]) / plane_normal[2];
             cv::Vec3f point_world(x, y, z);
 
-            // ä¸‰ç»´ç‚¹æ‰¾åƒç´ ç‚¹
+            // ÈıÎ¬µãÕÒÏñËØµã
             cv::Vec3f point_camera = -rotation_matrix.t() * point_world + rotation_matrix.t() * cv::Vec3f(t_x, t_y, t_z);
             int v = static_cast<int>((fy * point_camera[1] / point_camera[2] + cy));
             int u = static_cast<int>((fx * point_camera[0] / point_camera[2] + cx));
 
-            int v1 = (y + 100) / step;
-            int u1 = (x + 100) / step;
+            int v1 = (y - minPt.y + 5) / step;
+            int u1 = (x - minPt.x + 50) / step;
 
-            // å¡«å……åƒç´ å€¼åˆ°æ–°å›¾åƒ
+            // Ìî³äÏñËØÖµµ½ĞÂÍ¼Ïñ
             if (u >= 0 && u < image.cols && v >= 0 && v < image.rows) {
-                //if (new_image.at<cv::Vec3b>(v1, u1) == cv::Vec3b(0, 0, 0)) {
-                //    new_image.at<cv::Vec3b>(v1, u1) = image.at<cv::Vec3b>(v, u);
-                //}
                 new_image.at<cv::Vec3b>(v1, u1) = image.at<cv::Vec3b>(v, u);
             }
         }
@@ -88,15 +202,24 @@ cv::Mat process_image(cv::Mat& image, cv::Mat& new_image, float q_w, float q_x, 
 }
 
 int main() {
+    
+    // µãÔÆÎÄ¼şÂ·¾¶
+    std::string cloudname = "./²âÊÔÊı¾İ¼°½á¹û/points_w.txt";
+    std::tuple<cv::Vec3f, cv::Vec3f, pcl::PointXYZ, pcl::PointXYZ> plane = fitPlaneFromPointCloud(cloudname);
+    cv::Vec3f plane_normal = std::get<0>(plane);
+    cv::Vec3f plane_point = std::get<1>(plane);
+    pcl::PointXYZ minPt = std::get<2>(plane);
+    pcl::PointXYZ maxPt = std::get<3>(plane);
+    int targetWidth = static_cast<int>(maxPt.x - minPt.x + 65)/step;
+    int targetHeight = static_cast<int>(maxPt.y - minPt.y + 20)/step;
 
-    //è½¨è¿¹æ–‡ä»¶è·¯å¾„
-    std::ifstream infile("C:/Users/Jialei He/Desktop/try/enu_tras.txt");
-    //std::ifstream infile("C:/Users/Jialei He/Desktop/enu/tras-3.txt");
+    // ¹ì¼£ÎÄ¼şÂ·¾¶
+    std::ifstream infile("./²âÊÔÊı¾İ¼°½á¹û/images_w.txt");
     if (!infile.is_open()) {
         std::cerr << "Failed to open data file." << std::endl;
         return -1;
     }
-    cv::Mat result(2000, 2000, CV_8UC3, cv::Scalar(0, 0, 0));
+    cv::Mat result(targetHeight, targetWidth, CV_8UC3, cv::Scalar(0, 0, 0));
 
     std::string line;
     bool first_line = true;
@@ -109,34 +232,23 @@ int main() {
             std::cerr << "Failed to parse line: " << line << std::endl;
             continue;
         }
-        //å›¾åƒè·¯å¾„
-        std::string filepath = "D:/OpenSfM_1/OpenSfM/data/mydata/images/" + filename;
-        cv::Mat image = cv::imread(filepath);
-        std::cout << "è¯»å–å›¾åƒ " << filename << std::endl;
+        // Í¼ÏñÂ·¾¶
+        std::string imagepath = "./²âÊÔÊı¾İ¼°½á¹û/images/" + filename;
+        cv::Mat image = cv::imread(imagepath);
+        std::cout << "¶ÁÈ¡Í¼Ïñ " << filename << std::endl;
         if (image.empty()) {
             std::cerr << "Failed to read image." << std::endl;
             return -1;
         }
 
         if (first_line) {
-            result = process_image(image, result, q_w, q_x, q_y, q_z, t_x, t_y, t_z);
-            /*
-            Point2d::max.x = t_x > Point2d::max.x ? t_x : Point2d::max.x;
-            Point2d::max.y = t_y > Point2d::max.y ? t_y : Point2d::max.y;
-            Point2d::min.x = t_x < Point2d::min.x ? t_x : Point2d::min.x;
-            Point2d::min.y = t_y < Point2d::min.y ? t_y : Point2d::min.y;
-            double width = Point2d::max.x - Point2d::min.x;
-            double height = Point2d::max.y - Point2d::min.y;
-            int output_width = static_cast<int>(width / step + 100);
-            int output_height = static_cast<int>(height / step + 100);
-            cv::resize(result, result, cv::Size(output_width, output_height));
-            */
+            result = process_image(image, result, q_w, q_x, q_y, q_z, t_x, t_y, t_z, plane_normal, plane_point, minPt, maxPt);
             first_line = false;
         }
         else {
-            result = process_image(image, result, q_w, q_x, q_y, q_z, t_x, t_y, t_z);
+            result = process_image(image, result, q_w, q_x, q_y, q_z, t_x, t_y, t_z, plane_normal, plane_point, minPt, maxPt);
         }
-        cv::imwrite("./result.jpg", result);
+        cv::imwrite("./²âÊÔÊı¾İ¼°½á¹û/result.jpg", result);
     }
     return 0;
 }
