@@ -150,7 +150,7 @@ DJI_20220908100431_0102 0.06606302498136993 -0.705900617465329 0.705014721134766
 
 ```
 	// 图像路径
-	std::string imagepath = "./测试数据及结果/images/" + filename;
+    std::string imagepath = "./测试数据及结果/images/" + filename;
 ```
 
 运行代码生成结果，保存在 *result.jpg* 。
