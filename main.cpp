@@ -6,7 +6,7 @@
 #include <opencv2/opencv.hpp>
 #include <cmath>
 
-// Ïà»úÄÚÍâ²ÎºÍÆ½Ãæ·½³Ì
+// ç›¸æœºå†…å¤–å‚å’Œå¹³é¢æ–¹ç¨‹
 //float WIDTH = 8192;
 //float HEIGHT = 5460;
 //float fx = 8141.6649310000003;
@@ -26,7 +26,7 @@ cv::Vec3f plane_normal(-0.00144578, -0.00226666, 0.999996);
 //cv::Vec3f plane_point(0, 0, -91.6242);
 cv::Vec3f plane_point(0, 0, -81.6242);
 
-// ´æ´¢µãµÄºá×ø±êºÍ×İ×ø±ê
+// å­˜å‚¨ç‚¹çš„æ¨ªåæ ‡å’Œçºµåæ ‡
 class Point2d {
 public:
     double x;
@@ -40,7 +40,7 @@ public:
 Point2d Point2d::max = Point2d(-1e10, -1e10);
 Point2d Point2d::min = Point2d(1e10, 1e10);
 
-// Ğı×ª¾ØÕó(Ïà»úµ½ÊÀ½ç×ø±êÏµµÄĞı×ª¾ØÕó)
+// æ—‹è½¬çŸ©é˜µ(ç›¸æœºåˆ°ä¸–ç•Œåæ ‡ç³»çš„æ—‹è½¬çŸ©é˜µ)
 cv::Matx33f quaternion_to_rotation_matrix(float q_w, float q_x, float q_y, float q_z) {
     cv::Matx33f rotation_matrix;
     rotation_matrix(0, 0) = 1 - 2 * q_y * q_y - 2 * q_z * q_z;
@@ -55,19 +55,19 @@ cv::Matx33f quaternion_to_rotation_matrix(float q_w, float q_x, float q_y, float
     return rotation_matrix;
 }
 
-// ÕıÉäÍ¼´¦Àí
+// æ­£å°„å›¾å¤„ç†
 cv::Mat process_image(cv::Mat& image, cv::Mat& new_image, float q_w, float q_x, float q_y, float q_z, float t_x, float t_y, float t_z) {
     
-    // ¹¹ÔìÏà»úĞı×ª¾ØÕó
+    // æ„é€ ç›¸æœºæ—‹è½¬çŸ©é˜µ
     cv::Matx33f rotation_matrix = quaternion_to_rotation_matrix(q_w, q_x, q_y, q_z);
 
-    // ÑØ x ºÍ y ·½Ïò¾ùÔÈ²ÉÑùÈıÎ¬µã²¢Í¶Ó°µ½Í¼ÏñÉÏ
+    // æ²¿ x å’Œ y æ–¹å‘å‡åŒ€é‡‡æ ·ä¸‰ç»´ç‚¹å¹¶æŠ•å½±åˆ°å›¾åƒä¸Š
     for (float y = -100; y < 2000; y += step) {
         for (float x = -100; x < 2000; x += step) {
             float z = (-plane_normal[0] * x - plane_normal[1] * y + plane_point[2]) / plane_normal[2];
             cv::Vec3f point_world(x, y, z);
 
-            // ÈıÎ¬µãÕÒÏñËØµã
+            // ä¸‰ç»´ç‚¹æ‰¾åƒç´ ç‚¹
             cv::Vec3f point_camera = -rotation_matrix.t() * point_world + rotation_matrix.t() * cv::Vec3f(t_x, t_y, t_z);
             int v = static_cast<int>((fy * point_camera[1] / point_camera[2] + cy));
             int u = static_cast<int>((fx * point_camera[0] / point_camera[2] + cx));
@@ -75,7 +75,7 @@ cv::Mat process_image(cv::Mat& image, cv::Mat& new_image, float q_w, float q_x, 
             int v1 = (y + 100) / step;
             int u1 = (x + 100) / step;
 
-            // Ìî³äÏñËØÖµµ½ĞÂÍ¼Ïñ
+            // å¡«å……åƒç´ å€¼åˆ°æ–°å›¾åƒ
             if (u >= 0 && u < image.cols && v >= 0 && v < image.rows) {
                 //if (new_image.at<cv::Vec3b>(v1, u1) == cv::Vec3b(0, 0, 0)) {
                 //    new_image.at<cv::Vec3b>(v1, u1) = image.at<cv::Vec3b>(v, u);
@@ -89,7 +89,7 @@ cv::Mat process_image(cv::Mat& image, cv::Mat& new_image, float q_w, float q_x, 
 
 int main() {
 
-    //¹ì¼£ÎÄ¼şÂ·¾¶
+    //è½¨è¿¹æ–‡ä»¶è·¯å¾„
     std::ifstream infile("C:/Users/Jialei He/Desktop/try/enu_tras.txt");
     //std::ifstream infile("C:/Users/Jialei He/Desktop/enu/tras-3.txt");
     if (!infile.is_open()) {
@@ -109,10 +109,10 @@ int main() {
             std::cerr << "Failed to parse line: " << line << std::endl;
             continue;
         }
-        //Í¼ÏñÂ·¾¶
-        std::string filepath = "D:/OpenSfM_1/OpenSfM/data/mydata/images/" + filename + ".JPG";
+        //å›¾åƒè·¯å¾„
+        std::string filepath = "D:/OpenSfM_1/OpenSfM/data/mydata/images/" + filename;
         cv::Mat image = cv::imread(filepath);
-        std::cout << "¶ÁÈ¡Í¼Ïñ " << filename << std::endl;
+        std::cout << "è¯»å–å›¾åƒ " << filename << std::endl;
         if (image.empty()) {
             std::cerr << "Failed to read image." << std::endl;
             return -1;
